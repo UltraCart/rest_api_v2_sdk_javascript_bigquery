@@ -1,0 +1,31 @@
+{
+  "name": "rest_api_v2_sdk_javascript_bigquery",
+  "version": "0.1.0",
+  "description": "UltraCart REST API V2 JavaScript SDK — BigQuery extension. Query the UltraCart data warehouse and receive native SDK model instances.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test",
+    "check:schema": "node scripts/check-schema-drift.js",
+    "baseline:schema": "node scripts/check-schema-drift.js --write-baseline"
+  },
+  "keywords": [
+    "ultracart",
+    "bigquery",
+    "sdk",
+    "ecommerce",
+    "data-warehouse"
+  ],
+  "author": "UltraCart",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@google-cloud/bigquery": "^8.3.1"
+  },
+  "peerDependencies": {
+    "ultra_cart_rest_api_v2": "^4.1.103"
+  },
+  "peerDependenciesMeta": {
+    "ultra_cart_rest_api_v2": {
+      "optional": true
+    }
+  }
+}

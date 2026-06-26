@@ -1,0 +1,39 @@
+{
+  "Order": [
+    "auto_order.rebill_orders",
+    "customer_profile.orders",
+    "customer_profile.password",
+    "customer_profile.quotes",
+    "customer_profile.loyalty.internal_gift_certificate",
+    "payment.transactions.transaction_id"
+  ],
+  "Customer": [
+    "orders.auto_order.rebill_orders",
+    "orders.customer_profile",
+    "orders.payment.transactions.transaction_id",
+    "password",
+    "quotes.auto_order.rebill_orders",
+    "quotes.customer_profile",
+    "quotes.payment.transactions.transaction_id",
+    "loyalty.internal_gift_certificate"
+  ],
+  "AutoOrder": [
+    "rebill_orders.auto_order.rebill_orders",
+    "rebill_orders.customer_profile.orders",
+    "rebill_orders.customer_profile.password",
+    "rebill_orders.customer_profile.quotes",
+    "rebill_orders.customer_profile.loyalty.internal_gift_certificate",
+    "rebill_orders.payment.transactions.transaction_id",
+    "original_order.auto_order.rebill_orders",
+    "original_order.customer_profile.orders",
+    "original_order.customer_profile.password",
+    "original_order.customer_profile.quotes",
+    "original_order.customer_profile.loyalty.internal_gift_certificate",
+    "original_order.payment.transactions.transaction_id"
+  ],
+  "Item": [
+    "variant_items.variant_default_multimedia",
+    "variant_items.variant_pricing",
+    "digital_delivery.activation_code_shared_secret"
+  ]
+}
