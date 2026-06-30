@@ -5,8 +5,9 @@ SDK model instances** (`Order`, `Customer`, `AutoOrder`, …) — the same objec
 use against the REST API. Ideal for bulk extracts (order history, customer data, loyalty
 portals) where hammering the REST API would be slow and wasteful.
 
-> Status: **early spike.** Core auth + transformer + SDK hydration working and unit-tested.
-> See [PLAN.md](./PLAN.md) for design, scope, and roadmap.
+> Status: **early release (0.1.0).** Core auth + transformer + SDK hydration working and
+> unit-tested. See the [CHANGELOG](./CHANGELOG.md) for release notes and
+> [CONTRIBUTING](./CONTRIBUTING.md) to get involved.
 
 ## Why
 
@@ -23,7 +24,7 @@ between BigQuery and the SDK, which this library handles automatically:
 ## Install
 
 ```bash
-npm install rest_api_v2_sdk_javascript_bigquery ultra_cart_rest_api_v2 @google-cloud/bigquery
+npm install @ultracart/bigquery-sdk ultra_cart_rest_api_v2 @google-cloud/bigquery
 ```
 
 ## Authentication
@@ -47,7 +48,7 @@ read access to your warehouse project at the assigned taxonomy (PII) level.
 handles a small incremental sync and a full-history backfill with constant memory.
 
 ```js
-const { UltraCartBigQuery } = require('rest_api_v2_sdk_javascript_bigquery');
+const { UltraCartBigQuery } = require('@ultracart/bigquery-sdk');
 const UltraCartApi = require('ultra_cart_rest_api_v2');
 
 // Project is derived as ultracart-dw-{merchantId}

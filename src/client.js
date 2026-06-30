@@ -24,7 +24,7 @@ const USD_PER_TIB = 6.25;
  * thousands of orders) and an incremental sync share the same constant-memory path.
  *
  * @example
- *   const { UltraCartBigQuery } = require('rest_api_v2_sdk_javascript_bigquery');
+ *   const { UltraCartBigQuery } = require('@ultracart/bigquery-sdk');
  *   const UltraCartApi = require('ultra_cart_rest_api_v2');
  *
  *   const ucbq = new UltraCartBigQuery({ merchantId: 'DEMO' });
