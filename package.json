@@ -39,6 +39,9 @@
   "dependencies": {
     "@google-cloud/bigquery": "^8.3.1"
   },
+  "devDependencies": {
+    "ultra_cart_rest_api_v2": "^4.1.103"
+  },
   "peerDependencies": {
     "ultra_cart_rest_api_v2": "^4.1.103"
   },
