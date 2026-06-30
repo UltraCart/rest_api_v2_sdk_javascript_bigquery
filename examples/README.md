@@ -23,7 +23,7 @@ There are two patterns per entity:
    ```
 2. Install peer deps alongside this package:
    ```bash
-   npm install rest_api_v2_sdk_javascript_bigquery ultra_cart_rest_api_v2 @google-cloud/bigquery
+   npm install @ultracart/bigquery-sdk ultra_cart_rest_api_v2 @google-cloud/bigquery
    ```
 
 ## Running

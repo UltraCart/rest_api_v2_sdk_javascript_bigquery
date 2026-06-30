@@ -1,5 +1,5 @@
 {
-  "name": "rest_api_v2_sdk_javascript_bigquery",
+  "name": "@ultracart/bigquery-sdk",
   "version": "0.1.0",
   "description": "UltraCart REST API V2 JavaScript SDK — BigQuery extension. Query the UltraCart data warehouse and receive native SDK model instances.",
   "main": "src/index.js",
@@ -17,6 +17,25 @@
   ],
   "author": "UltraCart",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery.git"
+  },
+  "homepage": "https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery#readme",
+  "bugs": {
+    "url": "https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "src",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "dependencies": {
     "@google-cloud/bigquery": "^8.3.1"
   },

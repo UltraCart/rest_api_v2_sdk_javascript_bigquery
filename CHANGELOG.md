@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-06-30
+
 ### Added
 - Initial release: `UltraCartBigQuery` client that streams UltraCart data-warehouse rows and
   hydrates them into native `ultra_cart_rest_api_v2` SDK model instances.
@@ -23,4 +25,5 @@ All notable changes to this project are documented here. The format is based on
 - Per-entity examples for full backfill and change-data-capture (orders, customers, auto
   orders, items), plus the extraction guide in `docs/EXTRACTION.md`.
 
-[Unreleased]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery
+[Unreleased]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/releases/tag/v0.1.0

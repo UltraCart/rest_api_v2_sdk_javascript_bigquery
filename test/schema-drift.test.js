@@ -38,7 +38,8 @@ const FAKE_FILES = {
   'OrderBilling.js': BILLING_SRC,
 };
 const fakeRead = (file) => {
-  const base = file.split('/').pop();
+  // Split on both separators: buildSdkTree uses path.join, which emits "\" on Windows.
+  const base = file.split(/[\\/]/).pop();
   if (!(base in FAKE_FILES)) throw new Error('no such file');
   return FAKE_FILES[base];
 };

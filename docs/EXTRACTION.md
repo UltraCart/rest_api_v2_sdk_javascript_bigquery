@@ -168,7 +168,7 @@ WHERE merchant_id = @mid AND creation_dts >= @since
 > comparison ("Invalid datetime string"). Strip it with the exported helper before using a
 > value as a filter param:
 > ```js
-> const { toBigQueryDatetime } = require('rest_api_v2_sdk_javascript_bigquery');
+> const { toBigQueryDatetime } = require('@ultracart/bigquery-sdk');
 > const params = { since: toBigQueryDatetime(watermark) }; // '2026-06-25T21:41:40Z' -> '...40'
 > ```
 
