@@ -9,8 +9,11 @@ extension.
 git clone https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery
 cd rest_api_v2_sdk_javascript_bigquery
 npm install
-npm test          # runs the offline unit tests (no BigQuery access needed)
+npm test              # runs the offline unit tests (no BigQuery access needed)
+npm run test:coverage # same tests, plus the coverage thresholds CI enforces
 ```
+
+Requires **Node.js 22 or newer** (matching `engines` in `package.json`).
 
 The unit tests use synthetic BigQuery rows and run with no network or credentials, so they're
 safe to run anywhere.
@@ -43,6 +46,9 @@ npm run check:schema -- --project=ultracart-dw-<merchant> --dataset=ultracart_dw
 - **Add tests** for behavior changes. Keep them offline (mock the BigQuery client like the
   existing `test/client.test.js` does).
 - **Run `npm test`** before opening a PR; all tests must pass.
+- **Keep coverage up.** CI runs `npm run test:coverage`, which fails below 99% lines / 90%
+  branches / 90% functions. If a change legitimately can't be covered offline, say why in
+  the PR rather than lowering the threshold.
 - **Schema drift:** if the SDK or warehouse schema legitimately changes the accepted set of
   SDK-only fields, refresh the baseline with `npm run baseline:schema -- --project=… --dataset=…`
   and explain why in the PR.
