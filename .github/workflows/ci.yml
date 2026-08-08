@@ -4,9 +4,6 @@ on:
   push:
     branches: [main, master]
   pull_request:
-  schedule:
-    # Weekly: catch warehouse/SDK schema drift even with no code change.
-    - cron: '0 7 * * 1'
 
 jobs:
   test:
@@ -20,27 +17,9 @@ jobs:
       - name: Unit tests (transform, client, schema-drift logic)
         run: npm test
 
-  schema-drift:
-    # Live SDK <-> BigQuery schema-alignment check. Runs only when GCP credentials are
-    # configured (set the GCP_SA_KEY secret + the project/dataset vars). Without them this
-    # job is skipped — the unit-test job above still validates the diff logic offline.
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: npm ci || npm install
-      - name: Auth to Google Cloud
-        id: auth
-        if: ${{ secrets.GCP_SA_KEY != '' }}
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-      - name: Check SDK <-> BQ schema drift
-        if: ${{ steps.auth.outcome == 'success' }}
-        env:
-          UC_DRIFT_PROJECT: ${{ vars.UC_DRIFT_PROJECT }}   # e.g. ultracart-dw-<merchant>
-          UC_DRIFT_DATASET: ${{ vars.UC_DRIFT_DATASET }}   # e.g. ultracart_dw_high (PII tier)
-        run: npm run check:schema -- --project="$UC_DRIFT_PROJECT" --dataset="$UC_DRIFT_DATASET"
+# Note: the live SDK <-> BigQuery schema-drift check is not run here. It needs warehouse
+# credentials this repo does not hold, and its previous incarnation used `secrets` inside a
+# step-level `if`, which is invalid and silently broke this entire workflow. Run it locally
+# (`npm run check:schema -- --project=… --dataset=…`, see CONTRIBUTING.md). To bring it back
+# into CI, prefer the credential-free offline mode (`--schema-dir` against committed schema
+# snapshots) in its own workflow, so it can never take the unit tests down again.
