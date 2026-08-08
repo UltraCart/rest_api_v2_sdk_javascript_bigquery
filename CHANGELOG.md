@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+- Resolved a high-severity `brace-expansion` DoS advisory set (GHSA-3jxr-9vmj-r5cp,
+  GHSA-mh99-v99m-4gvg, GHSA-rgw5-rvv9-x895) by bumping the transitive lockfile pin to 1.1.18.
+  The package was reachable only through the dev toolchain
+  (`ultra_cart_rest_api_v2` → `@babel/cli` → `glob` → `minimatch`); published installs of this
+  SDK were never affected.
+
+### Changed
+- Refreshed the `ultra_cart_rest_api_v2` lockfile pin to 4.1.125. The declared dev/peer range
+  (`^4.1.103`) is unchanged, so no consumer upgrade is required.
+
 ## [0.1.0] - 2026-06-30
 
 ### Added
