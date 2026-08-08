@@ -6,6 +6,20 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed (BREAKING)
+- **Node.js 22 is now the minimum supported runtime** (`engines: >=22`, was `>=18`).
+- Upgraded `@google-cloud/bigquery` from `^8.3.1` to `^9.0.1`, which sets that same Node
+  floor. No API surface of this library changed — `createQueryJob`, `job.getQueryResults`,
+  `dataset().table().getMetadata()` and the `{ value }` scalar wrappers the transformer
+  relies on all behave identically under v9.
+- Node 18 and 20 are both past end-of-life. Consumers still on them should stay on the
+  `0.1.x` line, which tracks `@google-cloud/bigquery` v8 (npm dist-tag `legacy-18`).
+
+### Added
+- Test covering construction of a real `@google-cloud/bigquery` client. Every other test
+  injects a fake, so nothing previously exercised the actual dependency — the thing a major
+  version bump is most likely to break.
+
 ### Security
 - Resolved a high-severity `brace-expansion` DoS advisory set (GHSA-3jxr-9vmj-r5cp,
   GHSA-mh99-v99m-4gvg, GHSA-rgw5-rvv9-x895) by bumping the transitive lockfile pin to 1.1.18.
