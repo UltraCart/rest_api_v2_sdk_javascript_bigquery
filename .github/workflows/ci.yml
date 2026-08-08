@@ -12,7 +12,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Matches the engines floor in package.json. Testing the floor (not a newer
+          # version) is what catches "works on 24, broken on 22".
+          node-version: '22'
       - run: npm ci || npm install
       - name: Unit tests (transform, client, schema-drift logic)
         run: npm test

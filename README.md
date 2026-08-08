@@ -27,6 +27,10 @@ between BigQuery and the SDK, which this library handles automatically:
 npm install @ultracart/bigquery-sdk ultra_cart_rest_api_v2 @google-cloud/bigquery
 ```
 
+**Requires Node.js 22 or newer.** This follows `@google-cloud/bigquery` v9, which sets the
+same floor. Node 18 and 20 are both past end-of-life; if you are still on one of them, stay
+on `@ultracart/bigquery-sdk@0.1.x`, which tracks `@google-cloud/bigquery` v8.
+
 ## Authentication
 
 Uses Google Application Default Credentials (ADC) — no keys in code:

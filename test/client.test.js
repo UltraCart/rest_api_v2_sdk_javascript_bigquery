@@ -134,6 +134,18 @@ test('constructor maxBytesBilled:0 disables the default cap', async () => {
   assert.equal('maximumBytesBilled' in captured.jobConfig, false);
 });
 
+test('constructs a real @google-cloud/bigquery client when none is injected', () => {
+  // Every other test injects a fake client, so nothing else would notice a breaking change
+  // in @google-cloud/bigquery itself. This exercises the real constructor and the methods
+  // query()/dryRun() depend on. No network and no credentials: the BigQuery client resolves
+  // auth lazily, on first request, not at construction.
+  const ucbq = new UltraCartBigQuery({ merchantId: 'DEMO' });
+  assert.equal(ucbq.projectId, 'ultracart-dw-demo', 'merchantId derives the project id');
+  assert.equal(ucbq.bigquery.constructor.name, 'BigQuery');
+  assert.equal(typeof ucbq.bigquery.createQueryJob, 'function', 'query() depends on this');
+  assert.equal(typeof ucbq.bigquery.dataset, 'function', 'the drift checker depends on this');
+});
+
 test('dryRun() estimates bytes/GB/cost without running', async () => {
   const captured = {};
   // 2 GiB processed
