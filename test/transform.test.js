@@ -142,6 +142,61 @@ test('transformRows produces SDK-shaped plain objects', () => {
   assert.deepEqual(row.Tags, [{ tag_value: 'vip' }, { tag_value: 'loyalty' }]);
 });
 
+test('REPEATED scalar columns become plain arrays', () => {
+  // Rare in this warehouse (primitive arrays are normally REPEATED RECORD{value}), but a
+  // genuine BigQuery shape: REPEATED STRING/INT64 with no sub-fields.
+  const fields = [
+    { name: 'tags', type: 'STRING', mode: 'REPEATED' },
+    { name: 'counts', type: 'INTEGER', mode: 'REPEATED' },
+    { name: 'seen_at', type: 'DATETIME', mode: 'REPEATED' },
+  ];
+  const [row] = transformRows(
+    [{ tags: ['a', 'b'], counts: [wrap('1'), wrap('2')], seen_at: [wrap('2025-01-15 10:30:00')] }],
+    fields,
+  );
+
+  assert.deepEqual(row.tags, ['a', 'b']);
+  assert.deepEqual(row.counts, [1, 2], 'element wrappers unwrapped and coerced to Number');
+  assert.deepEqual(row.seen_at, ['2025-01-15T10:30:00Z'], 'per-element date transform');
+});
+
+test('a REPEATED field arriving as a bare scalar is still wrapped into an array', () => {
+  // Defensive: asArray() means a single value never silently becomes a non-array, which
+  // would break callers that always iterate.
+  const fields = [{ name: 'tags', type: 'STRING', mode: 'REPEATED' }];
+  const [row] = transformRows([{ tags: 'solo' }], fields);
+  assert.deepEqual(row.tags, ['solo']);
+});
+
+test('primitive-array elements survive both wrapped and bare encodings', () => {
+  // extractValue() pulls `value` out of the struct; elements that are already bare scalars
+  // must pass through untouched rather than becoming undefined.
+  const fields = [
+    {
+      name: 'cc_emails',
+      type: 'RECORD',
+      mode: 'REPEATED',
+      fields: [{ name: 'value', type: 'STRING', mode: 'NULLABLE' }],
+    },
+  ];
+  const [row] = transformRows([{ cc_emails: [{ value: 'a@example.com' }, 'b@example.com'] }], fields);
+  assert.deepEqual(row.cc_emails, ['a@example.com', 'b@example.com']);
+});
+
+test('null and absent fields are preserved, not invented', () => {
+  // constructFromObject would otherwise turn an absent column into an explicit undefined
+  // property, which changes JSON output for consumers.
+  const fields = [
+    { name: 'order_id', type: 'STRING', mode: 'NULLABLE' },
+    { name: 'creation_dts', type: 'DATETIME', mode: 'NULLABLE' },
+    { name: 'never_selected', type: 'STRING', mode: 'NULLABLE' },
+  ];
+  const [row] = transformRows([{ order_id: 'N-1', creation_dts: null }], fields);
+
+  assert.equal(row.creation_dts, null, 'null date stays null');
+  assert.equal('never_selected' in row, false, 'a column absent from the row is not added');
+});
+
 test('round-trip: transform + hydrate into a real SDK Order instance', () => {
   const ucbq = new UltraCartBigQuery({ merchantId: 'DEMO', bigquery: {} });
   const [order] = ucbq.hydrate([RAW_ROW], SCHEMA_FIELDS, UltraCartApi.Order);

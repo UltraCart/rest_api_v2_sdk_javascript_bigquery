@@ -5,6 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=99 --test-coverage-branches=90 --test-coverage-functions=90",
     "check:schema": "node scripts/check-schema-drift.js",
     "baseline:schema": "node scripts/check-schema-drift.js --write-baseline"
   },

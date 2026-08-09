@@ -44,6 +44,15 @@ const fakeRead = (file) => {
   return FAKE_FILES[base];
 };
 
+test('buildSdkTree flags a model whose source file cannot be read', () => {
+  // A referenced model that is missing from the installed SDK must surface as missingModel
+  // rather than silently producing an empty field tree, which would read as "no drift".
+  const tree = buildSdkTree({ modelName: 'NotAModel', modelsDir: '/models', readFile: fakeRead });
+
+  assert.equal(tree.missingModel, true);
+  assert.deepEqual(tree.children, {}, 'no fields invented for a model we could not read');
+});
+
 test('parseSdkModelFields captures convertToType AND constructFromObject patterns', () => {
   const fields = parseSdkModelFields(ORDER_SRC);
   const byName = Object.fromEntries(fields.map((f) => [f.name, f]));
@@ -103,6 +112,48 @@ test('diffTrees reports sdkOnly, bqOnly (with ignore), and shape mismatches', ()
   assert.ok(mismatches.some((m) => m.startsWith('billing')), 'billing scalar-vs-model -> mismatch');
   assert.ok(bqOnly.includes('surprise_col'), 'new bq column -> bqOnly');
   assert.ok(!bqOnly.includes('email_hash'), 'email_hash ignored by default predicate');
+});
+
+test('diffTrees descends into nested records and reports dotted paths', () => {
+  // The case above stops at the top level because `billing` mismatches on shape. When both
+  // sides agree it is a container, the diff must recurse — otherwise drift *inside* a
+  // nested record (the shape most of this warehouse's PII lives in) goes unreported.
+  const sdk = buildSdkTree({ modelName: 'Order', modelsDir: '/x', readFile: fakeRead });
+  const bq = buildBqTree([
+    { name: 'order_id', type: 'STRING', mode: 'NULLABLE' },
+    { name: 'exchange_rate', type: 'NUMERIC', mode: 'NULLABLE' },
+    { name: 'cc_emails', type: 'RECORD', mode: 'REPEATED', fields: [{ name: 'value', type: 'STRING' }] },
+    {
+      name: 'billing',
+      type: 'RECORD',
+      mode: 'NULLABLE',
+      fields: [
+        // first_name present in the SDK model but absent here -> nested sdkOnly
+        { name: 'cc_emails', type: 'RECORD', mode: 'REPEATED', fields: [{ name: 'value', type: 'STRING' }] },
+        { name: 'postal_code', type: 'STRING', mode: 'NULLABLE' }, // nested bqOnly
+      ],
+    },
+    {
+      name: 'items',
+      type: 'RECORD',
+      mode: 'REPEATED',
+      fields: [
+        { name: 'merchant_item_id', type: 'STRING', mode: 'NULLABLE' },
+        // quantity present in the SDK but not here, inside a REPEATED record
+        { name: 'quantity', type: 'RECORD', mode: 'NULLABLE', fields: [{ name: 'x', type: 'STRING' }] },
+      ],
+    },
+  ]);
+
+  const { sdkOnly, bqOnly, mismatches } = diffTrees(sdk, bq, { ignoreBqOnly: defaultIgnoreBqOnly });
+
+  assert.ok(sdkOnly.includes('billing.first_name'), 'nested missing column -> dotted sdkOnly path');
+  assert.ok(bqOnly.includes('billing.postal_code'), 'nested new column -> dotted bqOnly path');
+  assert.ok(
+    mismatches.some((m) => m.startsWith('items.quantity')),
+    'shape mismatch inside a repeated record -> dotted mismatch path',
+  );
+  assert.ok(!sdkOnly.includes('billing'), 'billing itself aligns; only its children drift');
 });
 
 test('defaultIgnoreBqOnly ignores hashes and partition/bookkeeping columns', () => {
