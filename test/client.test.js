@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { UltraCartBigQuery, DEFAULT_MAX_BYTES_BILLED } = require('../src/client');
+const { UltraCartBigQuery, DEFAULT_MAX_BYTES_BILLED, DEFAULT_PAGE_SIZE } = require('../src/client');
 const UltraCartApi = require('ultra_cart_rest_api_v2');
 
 const wrap = (value) => ({ value }); // mimic @google-cloud/bigquery scalar wrappers
@@ -134,6 +134,71 @@ test('constructor maxBytesBilled:0 disables the default cap', async () => {
   assert.equal('maximumBytesBilled' in captured.jobConfig, false);
 });
 
+test('constructor requires a merchantId or an explicit projectId', () => {
+  // Without this the client would build a BigQuery instance with projectId undefined and
+  // fail much later, at query time, with an opaque error from the API.
+  assert.throws(() => new UltraCartBigQuery(), /merchantId or an explicit projectId/);
+  assert.throws(() => new UltraCartBigQuery({}), /merchantId or an explicit projectId/);
+  assert.throws(
+    () => new UltraCartBigQuery({ bigquery: {} }),
+    /merchantId or an explicit projectId/,
+  );
+});
+
+test('explicit projectId overrides merchantId derivation', () => {
+  const ucbq = new UltraCartBigQuery({
+    merchantId: 'DEMO',
+    projectId: 'ultracart-dw-override',
+    bigquery: {},
+  });
+  assert.equal(ucbq.projectId, 'ultracart-dw-override');
+});
+
+test('query() without a model yields plain SDK-shaped objects', async () => {
+  const captured = {};
+  const pages = [[{ order_id: 'P-1', creation_dts: wrap('2025-03-01 08:00:00') }]];
+  const ucbq = new UltraCartBigQuery({ projectId: 'p', bigquery: makeFakeBigQuery({ pages, captured }) });
+
+  const [row] = await collect(ucbq.query('SELECT * FROM t'));
+
+  assert.equal(row instanceof UltraCartApi.Order, false, 'no model -> not hydrated');
+  assert.deepEqual(row, { order_id: 'P-1', creation_dts: '2025-03-01T08:00:00Z' });
+  assert.equal(Object.getPrototypeOf(row), Object.prototype, 'a plain object');
+});
+
+test('query() forwards named parameters to the job config', async () => {
+  // Named params are the library's safe alternative to string-interpolating SQL. If they
+  // stopped reaching createQueryJob, queries would fail or silently match nothing.
+  const captured = {};
+  const ucbq = new UltraCartBigQuery({ projectId: 'p', bigquery: makeFakeBigQuery({ pages: [[]], captured }) });
+
+  const params = { since: '2025-01-01T00:00:00', merchant: 'DEMO' };
+  await collect(ucbq.query('SELECT * FROM t WHERE creation_dts >= @since', { params }));
+
+  assert.deepEqual(captured.jobConfig.params, params);
+  assert.equal(captured.jobConfig.query, 'SELECT * FROM t WHERE creation_dts >= @since');
+});
+
+test('query() page size defaults to 50k and honors both override levels', async () => {
+  const captured = {};
+  let ucbq = new UltraCartBigQuery({ projectId: 'p', bigquery: makeFakeBigQuery({ pages: [[]], captured }) });
+  await collect(ucbq.query('SELECT 1'));
+  assert.equal(captured.pageQueries[0].maxResults, DEFAULT_PAGE_SIZE, 'default');
+  assert.equal(captured.pageQueries[0].autoPaginate, false, 'manual pagination');
+
+  // constructor-level override
+  const captured2 = {};
+  ucbq = new UltraCartBigQuery({ projectId: 'p', pageSize: 1000, bigquery: makeFakeBigQuery({ pages: [[]], captured: captured2 }) });
+  await collect(ucbq.query('SELECT 1'));
+  assert.equal(captured2.pageQueries[0].maxResults, 1000);
+
+  // per-query override wins over the constructor
+  const captured3 = {};
+  ucbq = new UltraCartBigQuery({ projectId: 'p', pageSize: 1000, bigquery: makeFakeBigQuery({ pages: [[]], captured: captured3 }) });
+  await collect(ucbq.query('SELECT 1', { pageSize: 25 }));
+  assert.equal(captured3.pageQueries[0].maxResults, 25);
+});
+
 test('constructs a real @google-cloud/bigquery client when none is injected', () => {
   // Every other test injects a fake client, so nothing else would notice a breaking change
   // in @google-cloud/bigquery itself. This exercises the real constructor and the methods
@@ -156,4 +221,27 @@ test('dryRun() estimates bytes/GB/cost without running', async () => {
   assert.equal(est.totalBytesProcessed, 2 * 1024 ** 3);
   assert.equal(est.gigabytesProcessed, 2);
   assert.ok(Math.abs(est.estimatedCostUsd - (2 / 1024) * 6.25) < 1e-9);
+});
+
+test('dryRun() reports zero when the job carries no byte statistics', async () => {
+  // A dry run against a fully-cached or trivial query can come back without
+  // totalBytesProcessed. Returning 0 beats NaN propagating into a cost estimate.
+  const bigquery = {
+    createQueryJob: async () => [{ metadata: {} }],
+  };
+  const ucbq = new UltraCartBigQuery({ projectId: 'p', bigquery });
+  const est = await ucbq.dryRun('SELECT 1');
+
+  assert.equal(est.totalBytesProcessed, 0);
+  assert.equal(est.gigabytesProcessed, 0);
+  assert.equal(est.estimatedCostUsd, 0);
+});
+
+test('dryRun() forwards named parameters', async () => {
+  const captured = {};
+  const ucbq = new UltraCartBigQuery({ projectId: 'p', bigquery: makeFakeBigQuery({ pages: [[]], captured }) });
+  await ucbq.dryRun('SELECT * FROM t WHERE id = @id', { params: { id: 'X-1' } });
+
+  assert.deepEqual(captured.jobConfig.params, { id: 'X-1' });
+  assert.equal(captured.jobConfig.dryRun, true);
 });

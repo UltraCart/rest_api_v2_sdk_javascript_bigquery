@@ -1,0 +1,59 @@
+version: 2
+
+updates:
+  # ---------------------------------------------------------------------------------------
+  # npm dependencies
+  # ---------------------------------------------------------------------------------------
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      # One PR for the routine noise. Majors stay separate — @google-cloud/bigquery v9
+      # raised the Node floor, which is a consumer-visible break that deserves its own
+      # review rather than being buried in a batch.
+      minor-and-patch:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # The SDK is a peer dependency: consumers pick the version, and the declared range
+      # (^4.1.103) already admits every 4.x release. A lockfile bump here does not change
+      # what consumers install, so weekly PRs for it would be pure noise. Refresh it
+      # deliberately with `npm update ultra_cart_rest_api_v2` instead.
+      - dependency-name: ultra_cart_rest_api_v2
+
+  # ---------------------------------------------------------------------------------------
+  # GitHub Actions
+  # ---------------------------------------------------------------------------------------
+  # Workflows pin actions to commit SHAs. Dependabot understands SHA pins and bumps both the
+  # SHA and its trailing "# vX.Y.Z" comment, so pinning does not mean going stale.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch

@@ -5,19 +5,33 @@ on:
     branches: [main, master]
   pull_request:
 
+# Scope the default GITHUB_TOKEN down to what the job actually needs, matching publish.yml.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # Actions are pinned to exact commit SHAs, not mutable tags: a tag can be repointed at
+      # new code, a SHA cannot. Dependabot (.github/dependabot.yml) keeps these current.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020   # v7.0.0
         with:
           # Matches the engines floor in package.json. Testing the floor (not a newer
           # version) is what catches "works on 24, broken on 22".
           node-version: '22'
-      - run: npm ci || npm install
-      - name: Unit tests (transform, client, schema-drift logic)
-        run: npm test
+
+      # `npm ci` only — never fall back to `npm install`, which would ignore the committed
+      # lockfile and silently test a different dependency tree than the one we ship.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests with coverage thresholds
+        run: npm run test:coverage
 
 # Note: the live SDK <-> BigQuery schema-drift check is not run here. It needs warehouse
 # credentials this repo does not hold, and its previous incarnation used `secrets` inside a
