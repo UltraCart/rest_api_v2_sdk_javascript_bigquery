@@ -5,7 +5,7 @@ SDK model instances** (`Order`, `Customer`, `AutoOrder`, …) — the same objec
 use against the REST API. Ideal for bulk extracts (order history, customer data, loyalty
 portals) where hammering the REST API would be slow and wasteful.
 
-> Status: **early release (0.1.0).** Core auth + transformer + SDK hydration working and
+> Status: **early release (0.2.0).** Core auth + transformer + SDK hydration working and
 > unit-tested. See the [CHANGELOG](./CHANGELOG.md) for release notes and
 > [CONTRIBUTING](./CONTRIBUTING.md) to get involved.
 
