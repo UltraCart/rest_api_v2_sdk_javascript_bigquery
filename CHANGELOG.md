@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-08
+
 ### Changed (BREAKING)
 - **Node.js 22 is now the minimum supported runtime** (`engines: >=22`, was `>=18`).
 - Upgraded `@google-cloud/bigquery` from `^8.3.1` to `^9.0.1`, which sets that same Node
@@ -50,5 +52,6 @@ All notable changes to this project are documented here. The format is based on
 - Per-entity examples for full backfill and change-data-capture (orders, customers, auto
   orders, items), plus the extraction guide in `docs/EXTRACTION.md`.
 
-[Unreleased]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/releases/tag/v0.1.0
