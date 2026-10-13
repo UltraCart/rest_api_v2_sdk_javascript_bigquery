@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-13
+
+### Changed
+- Refreshed the `@google-cloud/bigquery` lockfile pin from 9.0.1 to 9.0.2 (upstream patch
+  release). The declared range (`^9.0.1`) is unchanged, so no consumer upgrade is required.
+
 ## [0.2.0] - 2026-08-08
 
 ### Changed (BREAKING)
@@ -52,6 +58,7 @@ All notable changes to this project are documented here. The format is based on
 - Per-entity examples for full backfill and change-data-capture (orders, customers, auto
   orders, items), plus the extraction guide in `docs/EXTRACTION.md`.
 
-[Unreleased]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/releases/tag/v0.1.0
