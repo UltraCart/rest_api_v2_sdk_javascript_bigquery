@@ -118,8 +118,9 @@ Rules that keep it correct:
 
 - **Watermark = the run's start time**, saved only after all writes commit.
 - **Upsert on the entity id**, so a failed run can simply repeat.
-- **No `partition_date` filter on entity changelogs.** It is the creation week; edits to old
-  orders live in old partitions. (Analytics sessions are the exception, see the example.)
+- **No fixed `partition_date` window.** It is the creation week; edits to old records live in
+  old partitions. To prune a very large view (analytics sessions), look up the oldest changed
+  partition in the changelog first and pass it as a parameter, as the sessions example does.
 - **`toBigQueryDatetime()`** on the watermark: `RecordTime` is a `DATETIME` and rejects the `Z`.
 - **Deletes** never come back from the view. Query the changelog for ids whose newest row is
   `IsDelete`.

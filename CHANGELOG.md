@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- `examples/analytics-sessions-cdc.js` no longer bounds the query to a fixed 14-day
+  `partition_date` window, which silently missed sessions changed after that window (an
+  order or customer attached late). It now looks up the oldest changed partition in the
+  changelog first (a few MB, unbounded) and prunes the view to exactly that, passed as a
+  parameter. Typical runs cost the same; a late change widens only the run that needs it.
+  README and `docs/EXTRACTION.md` updated to match.
+
 ## [0.3.0] - 2026-11-16
 
 ### Added

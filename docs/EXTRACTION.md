@@ -250,10 +250,16 @@ file-backed watermark together as one schedulable job.
 `client_session_oid`. Three differences from the entities above:
 
 - **No SDK model.** Call `query()` without `model` and you get plain objects.
-- **Bound both sides with `partition_date`.** A session only changes while it is live, so unlike
-  orders it is safe to limit the view and the changelog to the weeks around the watermark:
-  `partition_date >= DATE_SUB(DATE(@since), INTERVAL 14 DAY)`. On a measured account this cut a
-  run from 0.71 GB to 0.03 GB scanned.
+- **Bound the view by the oldest changed partition, found first.** The sessions view is very
+  large and is almost all of a run's cost, while the changelog side scans in a few MB with no
+  partition filter. So run two queries: `SELECT MIN(partition_date) FROM
+  uc_analytics_session_streaming WHERE RecordTime > @since`, then read the view with
+  `partition_date >= @from_partition` passed as a **parameter** (a subquery in the filter does
+  not prune). The bound is exact, so a session changed long after it started (an order or
+  customer attached late) widens that run instead of being missed. Do not use a fixed window
+  such as "the last 14 days": it is cheaper only on paper and drops those late changes. On a
+  measured account a typical run read about 0.03 GB; reaching a session three months back
+  read about 0.4 GB.
 - **Select columns explicitly.** `hits` holds every page view in the session and dominates the
   row size.
 
@@ -274,4 +280,4 @@ See [`analytics-sessions-cdc.js`](../examples/analytics-sessions-cdc.js).
 | New **and updated** orders (CDC) | view + `uc_order_streaming` | `RecordTime > watermark` subquery |
 | CDC changelog, parent account | `ultracart_dw_linked_streaming` | as above |
 | Deleted orders | `uc_order_streaming` | newest row since watermark has `IsDelete` |
-| Changed sessions (visits) | `uc_analytics_sessions` + `uc_analytics_session_streaming` | `RecordTime > watermark`, both sides bounded by `partition_date` |
+| Changed sessions (visits) | `uc_analytics_sessions` + `uc_analytics_session_streaming` | `RecordTime > watermark`; view bounded by the changelog's oldest changed `partition_date` |
