@@ -17,9 +17,15 @@ const EXPECTED_EXPORTS = {
   resolveDataset: 'function',
   projectIdForMerchant: 'function',
   DATASET_STANDARD: 'string',
+  DATASET_LOW: 'string',
   DATASET_MEDIUM: 'string',
   DATASET_HIGH: 'string',
   DATASET_STREAMING: 'string',
+  DATASET_LINKED: 'string',
+  DATASET_LINKED_LOW: 'string',
+  DATASET_LINKED_MEDIUM: 'string',
+  DATASET_LINKED_HIGH: 'string',
+  DATASET_LINKED_STREAMING: 'string',
   transformRows: 'function',
   toBigQueryDatetime: 'function',
 };
@@ -54,6 +60,11 @@ test('entry-point exports are the same functions the modules export', () => {
   assert.equal(sdk.projectIdForMerchant, project.projectIdForMerchant);
   assert.equal(sdk.transformRows, transform.transformRows);
   assert.equal(sdk.toBigQueryDatetime, transform.toBigQueryDatetime);
+
+  // Dataset constants are re-exported by hand too; bind each to the same value.
+  for (const name of Object.keys(EXPECTED_EXPORTS).filter((n) => n.startsWith('DATASET_'))) {
+    assert.equal(sdk[name], project[name], `${name} should match src/project`);
+  }
 });
 
 test('the package entry point resolves to the tested module', () => {

@@ -5,7 +5,7 @@ SDK model instances** (`Order`, `Customer`, `AutoOrder`, …) — the same objec
 use against the REST API. Ideal for bulk extracts (order history, customer data, loyalty
 portals) where hammering the REST API would be slow and wasteful.
 
-> Status: **early release (0.2.1).** Core auth + transformer + SDK hydration working and
+> Status: **early release (0.3.0).** Core auth + transformer + SDK hydration working and
 > unit-tested. See the [CHANGELOG](./CHANGELOG.md) for release notes and
 > [CONTRIBUTING](./CONTRIBUTING.md) to get involved.
 
@@ -85,15 +85,64 @@ Every query is capped at **10 GB billed by default** (overridable per call with
 `maxBytesBilled`, or `0` to disable) — a runaway `SELECT *` aborts instead of billing a
 fortune.
 
+## Incremental sync (change data capture)
+
+For a recurring job (a nightly order pull, a loyalty sync), don't re-read history and don't
+filter on `creation_dts`: that misses refunds, shipments, and status changes on older orders.
+Every view has a **changelog** in the streaming dataset (`uc_order_streaming`,
+`uc_customer_streaming`, `uc_auto_order_streaming`, `uc_item_streaming`,
+`uc_analytics_session_streaming`) with one row per version of each record, stamped with
+`RecordTime` and flagged `IsDelete` on deletion. Ask it which ids changed, and read their
+current state from the view:
+
+```js
+const { UltraCartBigQuery, toBigQueryDatetime, DATASET_STREAMING } = require('@ultracart/bigquery-sdk');
+
+const startedAt = new Date().toISOString();          // the NEXT run's watermark
+const sql = `SELECT * FROM ultracart_dw.uc_orders
+              WHERE merchant_id = @mid
+                AND order_id IN (
+                      SELECT order_id FROM ${DATASET_STREAMING}.uc_order_streaming
+                       WHERE merchant_id = @mid AND RecordTime > @since)`;
+
+for await (const order of ucbq.query(sql, {
+  params: { mid: 'DEMO', since: toBigQueryDatetime(lastWatermark) },
+  model: UltraCartApi.Order,
+})) {
+  await upsert(order);                                // idempotent on order_id
+}
+await saveWatermark(startedAt);                       // only after every write commits
+```
+
+Rules that keep it correct:
+
+- **Watermark = the run's start time**, saved only after all writes commit.
+- **Upsert on the entity id**, so a failed run can simply repeat.
+- **No `partition_date` filter on entity changelogs.** It is the creation week; edits to old
+  orders live in old partitions. (Analytics sessions are the exception, see the example.)
+- **`toBigQueryDatetime()`** on the watermark: `RecordTime` is a `DATETIME` and rejects the `Z`.
+- **Deletes** never come back from the view. Query the changelog for ids whose newest row is
+  `IsDelete`.
+
+[`examples/daily-sync.js`](examples/daily-sync.js) is the complete job (changes, deletes, and a
+file-backed watermark). Per-entity CDC scripts and the sessions variant are listed in
+[`examples/`](examples/README.md); the reasoning is in [`docs/EXTRACTION.md`](docs/EXTRACTION.md).
+
 ### Datasets & linked (parent) accounts
 
 - Base `ultracart_dw` holds a single account's data with **no PII** (PII fields appear only
-  as `*_hash`).
+  as `*_hash`). `ultracart_dw_low` is the next tier up and still hashes PII.
 - **Parent/umbrella accounts** keep data in the **`ultracart_dw_linked*`** datasets, which
   span **all** of the parent's merchant ids — query those (and filter by `merchant_id`) to
-  cover every account.
+  cover every account. Their changelog dataset is `ultracart_dw_linked_streaming`.
 - **Customer PII** (names, emails, addresses, raw `cc_emails`) lives only in the
   **`_medium` / `_high`** taxonomy datasets, e.g. `ultracart_dw_linked_medium`.
+- There is one streaming (changelog) dataset per account regardless of tier.
+
+Every name is exported as a constant: `DATASET_STANDARD`, `DATASET_LOW`, `DATASET_MEDIUM`,
+`DATASET_HIGH`, `DATASET_STREAMING`, `DATASET_LINKED`, `DATASET_LINKED_LOW`,
+`DATASET_LINKED_MEDIUM`, `DATASET_LINKED_HIGH`, `DATASET_LINKED_STREAMING`. `resolveDataset({
+linked, taxonomy })` builds the view names from flags.
 
 ## Develop
 
