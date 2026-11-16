@@ -29,11 +29,20 @@ function projectIdForMerchant(merchantId) {
 
 /** Standard (no-PII) dataset. */
 const DATASET_STANDARD = 'ultracart_dw';
+/** Low dataset — access gated by taxonomy level; PII still appears only as `*_hash`. */
+const DATASET_LOW = 'ultracart_dw_low';
 /** Medium dataset — contains PII; access gated by taxonomy level. */
 const DATASET_MEDIUM = 'ultracart_dw_medium';
 /** High dataset — contains PII; access gated by taxonomy level. */
 const DATASET_HIGH = 'ultracart_dw_high';
-/** Streaming dataset — analytics & screen recordings (very large tables). */
+/**
+ * Streaming dataset — the raw change logs behind the views: one row per version of each
+ * record (`uc_order_streaming`, `uc_customer_streaming`, `uc_auto_order_streaming`,
+ * `uc_item_streaming`, `uc_analytics_session_streaming`, …), stamped with `RecordTime` and
+ * flagged `IsDelete` on deletion. Read it only for change-data-capture: select the id column
+ * and filter on `RecordTime`, then fetch current state from the view. There is one streaming
+ * dataset per account regardless of taxonomy tier. Tables are very large.
+ */
 const DATASET_STREAMING = 'ultracart_dw_streaming';
 
 /**
@@ -70,6 +79,7 @@ module.exports = {
   projectIdForMerchant,
   resolveDataset,
   DATASET_STANDARD,
+  DATASET_LOW,
   DATASET_MEDIUM,
   DATASET_HIGH,
   DATASET_STREAMING,

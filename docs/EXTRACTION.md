@@ -216,12 +216,48 @@ Two things to get right:
   order's *creation* week, so a recently-changed *old* order sits in an old partition and a
   partition filter would silently drop it. The `RecordTime` scan is columnar and cheap (~a few
   MB), so just scan it.
-- **Deletes** are rare and intentionally ignored here: a deleted order's latest changelog row is
-  `IsDelete`, which the view filters out, so it simply won't be returned. Handle separately only
-  if you need hard deletes.
+- **Deletes are not returned by this query**: a deleted order's latest changelog row is
+  `IsDelete`, which the view filters out, so it simply drops out. Detect them separately (below).
 
 Advance your watermark to the time you **started** the run (not the max row time), so anything
 written mid-run is re-examined next time.
+
+### Detecting deletes
+
+The changelog records a delete as a row with `IsDelete = TRUE` (a `BOOLEAN`). An order was
+deleted in the window if its **newest** changelog row since the watermark is a delete:
+
+```sql
+SELECT order_id FROM (
+  SELECT order_id, IsDelete,
+         ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY RecordTime DESC) AS rn
+    FROM ultracart_dw_streaming.uc_order_streaming
+   WHERE merchant_id = @mid AND RecordTime > @since
+)
+WHERE rn = 1 AND IsDelete
+```
+
+Taking only the newest row means a record deleted and then re-created inside the window is not
+reported as deleted. It reads three narrow columns, so it costs about as little as the CDC
+subquery. Swap the table and id column for the other entities.
+
+[`daily-sync.js`](../examples/daily-sync.js) puts the CDC query, this delete query, and a
+file-backed watermark together as one schedulable job.
+
+### Analytics sessions (storefront visits)
+
+`uc_analytics_sessions` has its own changelog, `uc_analytics_session_streaming`, keyed by
+`client_session_oid`. Three differences from the entities above:
+
+- **No SDK model.** Call `query()` without `model` and you get plain objects.
+- **Bound both sides with `partition_date`.** A session only changes while it is live, so unlike
+  orders it is safe to limit the view and the changelog to the weeks around the watermark:
+  `partition_date >= DATE_SUB(DATE(@since), INTERVAL 14 DAY)`. On a measured account this cut a
+  run from 0.71 GB to 0.03 GB scanned.
+- **Select columns explicitly.** `hits` holds every page view in the session and dominates the
+  row size.
+
+See [`analytics-sessions-cdc.js`](../examples/analytics-sessions-cdc.js).
 
 ---
 
@@ -236,3 +272,6 @@ written mid-run is re-examined next time.
 | Full backfill | per above | single streaming pass, no date chunks |
 | New orders since last run | per above | `creation_dts >= watermark` (+ lookback) |
 | New **and updated** orders (CDC) | view + `uc_order_streaming` | `RecordTime > watermark` subquery |
+| CDC changelog, parent account | `ultracart_dw_linked_streaming` | as above |
+| Deleted orders | `uc_order_streaming` | newest row since watermark has `IsDelete` |
+| Changed sessions (visits) | `uc_analytics_sessions` + `uc_analytics_session_streaming` | `RecordTime > watermark`, both sides bounded by `partition_date` |

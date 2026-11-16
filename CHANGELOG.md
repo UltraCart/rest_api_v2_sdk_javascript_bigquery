@@ -6,6 +6,38 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-16
+
+### Added
+- Exported the dataset constants that were defined but unreachable from the package root:
+  `DATASET_LINKED`, `DATASET_LINKED_LOW`, `DATASET_LINKED_MEDIUM`, `DATASET_LINKED_HIGH`,
+  `DATASET_LINKED_STREAMING`, plus a new `DATASET_LOW` (`ultracart_dw_low`). Parent accounts
+  can now name their CDC changelog dataset without a string literal.
+- `examples/daily-sync.js`: a complete schedulable job. Orders change data capture, delete
+  detection from the changelog's `IsDelete` rows, and a file-backed watermark that advances
+  only after every write commits.
+- `examples/analytics-sessions-cdc.js`: change data capture for storefront visits
+  (`uc_analytics_sessions` joined to `uc_analytics_session_streaming` on
+  `client_session_oid`), returning plain objects, with a `partition_date` bound on both sides
+  that cut a measured run from 0.71 GB to 0.03 GB scanned.
+- README section "Incremental sync (change data capture)", and `docs/EXTRACTION.md`
+  sections on detecting deletes and syncing analytics sessions.
+
+### Changed
+- Upgraded the paired `ultra_cart_rest_api_v2` dev dependency from `^4.1.103` to `^4.1.254`,
+  so tests hydrate against the current SDK models. The peer range is unchanged (`^4.1.103`):
+  older SDK versions still hydrate, they simply lack fields added since.
+- Corrected the `DATASET_STREAMING` doc comment: the streaming dataset holds the per-entity
+  changelogs, not only analytics and screen recordings.
+- CDC example headers no longer claim `_medium` / `_high` variants of the linked streaming
+  dataset. There is one streaming dataset per account regardless of tier.
+
+### Security
+- `npm audit fix` resolved 4 advisories (2 high, 2 moderate) in `brace-expansion`,
+  `browserslist`, `baseline-browser-mapping`, and `qs`. All are reachable only through the
+  `ultra_cart_rest_api_v2` dev dependency's tree (`@babel/cli`, `superagent`); this package's
+  own runtime dependencies were not affected. `npm audit` now reports 0 vulnerabilities.
+
 ## [0.2.1] - 2026-10-13
 
 ### Changed
@@ -58,7 +90,8 @@ All notable changes to this project are documented here. The format is based on
 - Per-entity examples for full backfill and change-data-capture (orders, customers, auto
   orders, items), plus the extraction guide in `docs/EXTRACTION.md`.
 
-[Unreleased]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/UltraCart/rest_api_v2_sdk_javascript_bigquery/releases/tag/v0.1.0

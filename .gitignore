@@ -2,3 +2,5 @@ node_modules/
 *.log
 sa-key.json
 .DS_Store
+.uc-watermark.json
+.uc-watermark.json.tmp

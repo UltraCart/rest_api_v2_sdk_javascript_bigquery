@@ -7,6 +7,7 @@ const {
   resolveDataset,
   projectIdForMerchant,
   DATASET_STANDARD,
+  DATASET_LOW,
   DATASET_MEDIUM,
   DATASET_HIGH,
   DATASET_STREAMING,
@@ -42,6 +43,7 @@ test('resolveDataset agrees with the exported dataset constants', () => {
   // The constants and the resolver are two ways to name the same datasets; if they ever
   // disagree, callers mixing the two would silently query the wrong tier.
   assert.equal(resolveDataset(), DATASET_STANDARD);
+  assert.equal(resolveDataset({ taxonomy: 'low' }), DATASET_LOW);
   assert.equal(resolveDataset({ taxonomy: 'medium' }), DATASET_MEDIUM);
   assert.equal(resolveDataset({ taxonomy: 'high' }), DATASET_HIGH);
   assert.equal(resolveDataset({ linked: true }), DATASET_LINKED);

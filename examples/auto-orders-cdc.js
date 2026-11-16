@@ -9,12 +9,13 @@
  * `ultracart_dw_streaming` (NO PII). Override via env vars:
  *   - PII:                    UC_VIEW_DATASET=ultracart_dw_medium   (or _high)
  *   - Parent/umbrella account: UC_VIEW_DATASET=ultracart_dw_linked
- *                              UC_STREAMING_DATASET=ultracart_dw_linked_streaming (+ _medium/_high)
+ *                              UC_STREAMING_DATASET=ultracart_dw_linked_streaming
  *
  * Notes:
  *  - RecordTime is a DATETIME — strip the trailing Z with toBigQueryDatetime().
  *  - Do NOT filter the changelog subquery by partition_date (it is the creation week).
- *  - Deletes are rare and ignored (the view filters out IsDelete rows).
+ *  - Deletes are not reported here (the view filters out IsDelete rows). See daily-sync.js
+ *    for the changelog query that detects them.
  *
  * Run:
  *   node examples/auto-orders-cdc.js ACME 2026-06-22T00:00:00Z
